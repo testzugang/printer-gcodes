@@ -153,18 +153,51 @@ G1 F30000
 G1 X230 Y15 ; move to safe position
 G28 X ; re-home X for accuracy after mech check
 
-;===== nozzle load line (prime line) ===============================
+;===== adaptive purge line (reduces waste) ===============================
 G90
 M83
 T1000
-G1 X100.0 Y-2.5 Z0.8 F18000 ;Move to start position
 M109 S{nozzle_temperature_initial_layer[initial_extruder]} ; ensure proper temp
-G1 Z0.2
-G0 E2 F300
-G0 X150 E5 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
-G0 Y-3 E0.500 F{outer_wall_volumetric_speed/(0.3*0.5)/4 * 60}
-G0 E0.2
-G0 X99 E5 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
+
+{if first_layer_print_min[0]<=25 or first_layer_print_min[1]<=25 or first_layer_print_min[0]>=205 or first_layer_print_min[1]>=205}
+    ; Default purge line for edge cases (original P1S style)
+    G1 X100.0 Y-2.5 Z0.8 F18000 ;Move to start position
+    G1 Z0.2
+    G0 E2 F300
+    G0 X150 E5 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
+    G0 Y-3 E0.500 F{outer_wall_volumetric_speed/(0.3*0.5)/4 * 60}
+    G0 E0.2
+    G0 X99 E5 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
+{else}
+    ;===== Adaptive purge line (L-shaped near print area) ===============================
+    G92 E0.0 ; reset extruder
+    G0 Z5 F18000 ; Lift Z before moving
+    
+    ; First line (vertical part of L) - positioned near print area
+    G1 X{first_layer_print_min[0]-15} Y{first_layer_print_min[1]+20} F6000.0
+    G1 Z0.8 F18000 ; Lower Z to printing height
+    G1 X{first_layer_print_min[0]-15} Y{first_layer_print_min[1]-10} E15 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
+    G92 E0.0 ; reset extruder
+    
+    ; Second line (horizontal part of L) - creates L shape
+    G1 X{first_layer_print_min[0]-5} Y{first_layer_print_min[1]-10} E8 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
+    G92 E0.0 ; reset extruder
+    
+    ; Finishing touches with varying speeds for better adhesion
+    G1 X{first_layer_print_min[0]} Y{first_layer_print_min[1]-10} E0.5 F{outer_wall_volumetric_speed/(0.3*0.5)/4 * 60}
+    G1 X{first_layer_print_min[0]+5} Y{first_layer_print_min[1]-10} E0.5 F{outer_wall_volumetric_speed/(0.3*0.5) * 60}
+    G1 X{first_layer_print_min[0]+10} Y{first_layer_print_min[1]-10} E0.5 F{outer_wall_volumetric_speed/(0.3*0.5)/4 * 60}
+    G92 E0.0 ; reset extruder
+    
+    ; Small retraction and Z lift
+    G1 E-0.5 F2100 ; small retraction
+    G0 Z5 F18000 ; Lift Z before final move
+    
+    ; Move to safe position near print start
+    G1 X{first_layer_print_min[0]+5} Y{first_layer_print_min[1]+5} F6000.0
+    G92 E0.0 ; reset extruder
+{endif}
+
 M400 ; ensure completion
 
 ;===== textured PEI plate compensation ==============
