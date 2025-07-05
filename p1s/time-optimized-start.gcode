@@ -49,12 +49,11 @@ G1 X60 F12000
 G1 Y245
 G1 Y265 F3000
 
-;===== material loading (simplified) ==========
+;===== optimized material loading ==========
 M620 M
 M620 S[initial_extruder]A   ; switch material if AMS exist
     M109 S[nozzle_temperature_initial_layer]
-    G1 X120 F12000
-    G1 X20 Y50 F12000
+    G1 X20 Y50 F12000 ; direct positioning
     G1 Y-3
     T[initial_extruder]
     G1 X54 F12000
@@ -64,22 +63,13 @@ M620.1 E F{filament_max_volumetric_speed[initial_extruder]/2.4053*60} T{nozzle_t
 
 M412 S1 ; ===turn on filament runout detection===
 
-;===== simplified filament preparation =================
-M109 S250 ;set nozzle to common flush temp for safety
-M106 P1 S0
-G92 E0
-G1 E25 F200 ; single purge instead of double
-M400
-M104 S[nozzle_temperature_initial_layer] ; set target temp
-G92 E0
-G1 E25 F200 ; second purge with temp transition for better flow
-M400
+;===== optimized filament preparation =================
+M109 S[nozzle_temperature_initial_layer] ; direct to target temp
 M106 P1 S255
 G92 E0
-G1 E5 F300
-M109 S{nozzle_temperature_initial_layer[initial_extruder]-20} ; drop temp slightly for retraction
+G1 E15 F300 ; single optimized purge
 G92 E0
-G1 E-0.5 F300
+G1 E-0.5 F300 ; direct retraction
 
 ;===== basic nozzle cleaning (simplified) ===============================
 M1002 gcode_claim_action : 14
