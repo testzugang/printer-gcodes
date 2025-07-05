@@ -112,6 +112,17 @@ G2 I0.5 J0 F300
 M109 S140 ; wait for safe temp
 M221 R; pop softendstop status
 G1 Z10 F1200
+
+; Shake to empty waste bin after cleaning (P1S specific)
+G1 X70 F9000       ; position for shake
+G1 X76 F15000      ; shake to put down garbage
+G1 X65 F15000
+G1 X76 F15000      ; repeat shake
+G1 X65 F15000
+G1 X80 F6000       ; slower move to wipe area
+G1 X95 F15000      ; wipe and shake
+G1 X80 F15000
+G1 X165 F15000     ; extended wipe and shake
 M400
 
 ;===== bed leveling ==================================
